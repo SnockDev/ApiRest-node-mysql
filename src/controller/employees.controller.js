@@ -9,6 +9,9 @@ export const getEmployees = async (req, res) => {
 export const getEmployee = async (req, res) => {
   const { id } = req.params;
   const [user] = await pool.query(`select * from employee where id=?`, id);
+  if (user.length < 1) {
+    return res.sendStatus(404).send("user not found");
+  }
   res.send(user);
 };
 
@@ -27,18 +30,28 @@ export const createEmployees = async (req, res) => {
   });
 };
 export const updateEmployees = async (req, res) => {
-  const {id}=req.params
-  const {body}=req
-  const [result]=await pool.query(`update employee set name= ? ,salary= ? where id=${id}`,[body.name,body.salary])
-  const [user]=await pool.query(`select * from employee where id=?`, id);
-  res.send(`usuario actualizado: ${user}`)
+  const { id } = req.params;
+  const { body } = req;
+  const [result] = await pool.query(
+    `update employee set name= IFNULL(?,name) ,salary= IFNULL(?,salary) where id=${id}`,
+    [body.name, body.salary]
+  );
+  if (result.affectedRows<1){
+    res.sendStatus(404).json({"message":"user not found"})
+  }
+  const [user] = await pool.query(`select * from employee where id=?`, id);
+  res.send({
+    name: name,
+    salary: salary,
+    id: rows.insertId,
+  });
 };
 
 export const deleteEmployees = async (req, res) => {
   const { id } = req.params;
   const [result] = await pool.query(`delete from employee where id= ?`, [id]);
   if (result.affectedRows < 1) {
-    return res.status(404).json({message:"id not found"});
+    return res.status(404).json({ message: "id not found" });
   }
-  res.sendStatus(204)
+  res.sendStatus(204);
 };
