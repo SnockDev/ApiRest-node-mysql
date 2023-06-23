@@ -7,6 +7,9 @@ const app=express()
 app.use(express.json())
 app.use('/api',employeeRoutes,indexRouter)
 //le indico la carpeta a usar y la ruta inicial
+app.use((req,res,next)=>{
+    res.json({"message":"endpoint not found"})
+})
 
 app.listen(3000,()=>{
     console.log(`server running on http://localhost:${3000}`);
