@@ -3,35 +3,34 @@ import { pool } from "../connection.js";
 export const getEmployees = async (req, res) => {
   //   res.send(`obteniendo empleados`);
   try {
-    const [employees] = await pool.query("select * from employee");
-    res.send(employees);
+    const employees = await pool.query("select * from employee");
+    res.send(employees[0]);
   } catch (error) {
     console.log(error);
-    return res.status(500).json({"message":"something goes wrong"})
+    return res.status(500).json({ message: "something goes wrong" });
   }
 };
 
 export const getEmployee = async (req, res) => {
-try {
+  try {
     const { id } = req.params;
-    const [user] = await pool.query(`select * from employee where id=?`, id);
+    const user = await pool.query(`select * from employee where id=?`, id);
     if (user.length < 1) {
       return res.sendStatus(404).send("user not found");
     }
-    res.send(user);
-} catch (error) {
-  res.status(500).json({"message":"something goes wrong"})
-  console.log(error);
-}
+    res.send([user]);
+  } catch (error) {
+    res.status(500).json({ message: "something goes wrong" });
+    console.log(error);
+  }
 };
 
 export const createEmployees = async (req, res) => {
-try {
+  try {
     const { name, salary } = req.body;
     console.log(name, salary);
     const [rows] = await pool.query(
-      "INSERT INTO employee (name,salary) VALUES (?, ?)",
-      [name, salary]
+      `INSERT INTO employee (name,salary) VALUES ("${name}", ${salary})`
     );
     console.log(`done`);
     res.send({
@@ -39,35 +38,39 @@ try {
       salary: salary,
       id: rows.insertId,
     });
-} catch (error) {
-  res.status(500).json({"message":"something goes wrong"})
-  console.log(error);
-}
+  } catch (error) {
+    res.status(500).json({ message: "something goes wrong" });
+    console.log(error);
+  }
 };
 export const updateEmployees = async (req, res) => {
-try {
+  try {
     const { id } = req.params;
     const { body } = req;
     const [result] = await pool.query(
-      `update employee set name= IFNULL(?,name) ,salary= IFNULL(?,salary) where id=${id}`,
-      [body.name, body.salary]
+      `update employee set name= IFNULL("${body.name}",name) ,salary= IFNULL(${body.salary},salary) where id=${id}`
     );
-    if (result.affectedRows<1){
-      res.sendStatus(404).json({"message":"user not found"})
+    if (result.affectedRows < 1) {
+      res.sendStatus(404).json({ message: "user not found" });
     }
     const [user] = await pool.query(`select * from employee where id=?`, id);
-    res.json({user})
-} catch (error) {
-  res.status(500).json({"message":"something goes wrong"})
-  console.log(error);
-}
+    res.json({ user });
+  } catch (error) {
+    res.status(500).json({ message: "something goes wrong" });
+    console.log(error);
+  }
 };
 
 export const deleteEmployees = async (req, res) => {
-  const { id } = req.params;
-  const [result] = await pool.query(`delete from employee where id= ?`, [id]);
-  if (result.affectedRows < 1) {
-    return res.status(404).json({ message: "id not found" });
+  try {
+    const { id } = req.params;
+    const [result] = await pool.query(`delete from employee where id=${id}`);
+    if (result.affectedRows < 1) {
+      return res.status(404).json({ message: "id not found" });
+    }
+    res.sendStatus(204);
+  } catch (error) {
+    res.status(500).json({ message: "something goes wrong" });
+    console.log(error);
   }
-  res.sendStatus(204);
 };
